@@ -12,8 +12,8 @@ export default function AbacoPage() {
                         Benvenuto alla pagina di Abaco - Zuzzurellone.
                     </p>
                     <p className="text-base text-center">
-                        Indovina la parola racchiusa tra le parole "abaco" e
-                        "zuzzurellone!"
+                        Indovina la parola racchiusa tra le parole &quot;abaco&quot; e
+                        &quot;zuzzurellone!&quot;
                     </p>
                     {/* Contenuto del gioco Abaco Zuzzurellone */}
                     <div className="flex flex-col items-center justify-center mt-6 bg-cyan-950 w-full p-6 rounded-lg shadow-lg">
