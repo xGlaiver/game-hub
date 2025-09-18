@@ -1,6 +1,7 @@
 "use client";
+import { normalize_string } from "utils/string_manipulation";
 import { useState } from "react";
-import { capitalizeFirstLetter } from "utils/capitalize";
+import { capitalizeFirstLetter } from "utils/string_manipulation";
 
 enum GameStatus {
     Start = "start",
@@ -8,14 +9,16 @@ enum GameStatus {
     Playing = "playing",
 }
 
+const DEFAULT_START_WORD = "Abaco";
+const DEFAULT_END_WORD = "Zuzzurellone";
+
 export default function AbacoPageClient() {
     const [wordToGuess, setWordToGuess] = useState<string>("");
     const [currentGuess, setCurrentGuess] = useState<string>("");
     const [gameStatus, setGameStatus] = useState<GameStatus>(GameStatus.Start);
     const [numberAttempts, setNumberAttempts] = useState<number>(0);
-    const [startWord, setStartWord] = useState<string>("Abaco");
-    const [endWord, setEndWord] = useState<string>("Zuzzurellone");
-    const [showError, setShowError] = useState<boolean>(false);
+    const [startWord, setStartWord] = useState<string>(DEFAULT_START_WORD);
+    const [endWord, setEndWord] = useState<string>(DEFAULT_END_WORD);
     const [errorMessage, setErrorMessage] = useState<string>("");
 
     function reset() {
@@ -28,43 +31,54 @@ export default function AbacoPageClient() {
     }
 
     function enterWordToGuess() {
-        if (wordToGuess.trim() === "") return;
+        const wordToGuessNormalized = normalize_string(wordToGuess);
+
+        setErrorMessage("");
+        if (wordToGuessNormalized === "") return;
+        if (wordToGuessNormalized.includes(" ")) {
+            setErrorMessage("La parola non può contenere spazi");
+            return;
+        }
         setGameStatus(GameStatus.Playing);
     }
 
     function tryToGuessWord() {
-        if (currentGuess.trim() === "") return;
-        setShowError(false);
+        const wordToGuessNormalized = normalize_string(wordToGuess);
+        const currentGuessNormalized = normalize_string(currentGuess);
+        const startWordNormalized = normalize_string(startWord);
+        const endWordNormalized = normalize_string(endWord);
 
+        if (currentGuessNormalized === "") return;
+        setErrorMessage("");
+        if (currentGuessNormalized.includes(" ")) {
+            setErrorMessage("La parola non può contenere spazi");
+            return;
+        }
         if (
-            currentGuess.toLocaleLowerCase() <= startWord.toLowerCase() ||
-            currentGuess.toLocaleLowerCase() >= endWord.toLowerCase()
+            currentGuessNormalized <= startWordNormalized ||
+            currentGuessNormalized >= endWordNormalized
         ) {
-            setShowError(true);
             setErrorMessage("La parola inserita è fuori dal range");
             return;
         }
 
-        setNumberAttempts(numberAttempts + 1);
-        if (
-            currentGuess.toLowerCase().trim() ===
-            wordToGuess.toLowerCase().trim()
-        ) {
+        setNumberAttempts((prev) => prev + 1);
+        if (currentGuessNormalized === wordToGuessNormalized) {
             setGameStatus(GameStatus.Won);
             return;
         }
 
-        if (currentGuess.toLowerCase() < wordToGuess.toLowerCase()) {
-            setStartWord(capitalizeFirstLetter(currentGuess));
-        } else if (currentGuess.toLowerCase() > wordToGuess.toLowerCase()) {
-            setEndWord(capitalizeFirstLetter(currentGuess));
+        if (currentGuessNormalized < wordToGuessNormalized) {
+            setStartWord(capitalizeFirstLetter(currentGuessNormalized));
+        } else if (currentGuessNormalized > wordToGuessNormalized) {
+            setEndWord(capitalizeFirstLetter(currentGuessNormalized));
         }
 
         setCurrentGuess("");
     }
 
     return (
-        <>
+        <div>
             {gameStatus === GameStatus.Start && (
                 <div>
                     <h4>Giocatore 1, inseririsci la parola da indovinare:</h4>
@@ -73,7 +87,9 @@ export default function AbacoPageClient() {
                             className="border border-gray-300 rounded-md p-2 text-black bg-amber-50"
                             type="text"
                             value={wordToGuess}
-                            onChange={(e) => setWordToGuess(e.target.value)}
+                            onChange={(e) =>
+                                setWordToGuess(normalize_string(e.target.value))
+                            }
                         />
                         <button
                             className="border border-gray-300 rounded-md p-2 text-black bg-amber-50 cursor-pointer hover:bg-amber-200 transition"
@@ -97,7 +113,11 @@ export default function AbacoPageClient() {
                             className="border border-gray-300 rounded-md p-2 text-black bg-amber-50"
                             type="text"
                             value={currentGuess}
-                            onChange={(e) => setCurrentGuess(e.target.value)}
+                            onChange={(e) =>
+                                setCurrentGuess(
+                                    normalize_string(e.target.value)
+                                )
+                            }
                         />
                         <button
                             className="border border-gray-300 rounded-md p-2 text-black bg-amber-50 cursor-pointer hover:bg-amber-200 transition"
@@ -109,16 +129,17 @@ export default function AbacoPageClient() {
                     <p className="mt-4">
                         Numero di tentativi: {numberAttempts}
                     </p>
-                    <p
-                        className={`text-red-800 font-medium ${
-                            showError ? "opacity-100" : "opacity-0"
-                        }`}
-                    >
-                        {errorMessage}
-                    </p>
                 </div>
             )}
-
+            <p
+                className={`text-red-800 font-medium transition mt-2.5 ${
+                    errorMessage
+                        ? "opacity-100 translate-0"
+                        : "opacity-0 -translate-x-60"
+                }`}
+            >
+                {errorMessage}
+            </p>
             {gameStatus === GameStatus.Won && (
                 <div className="flex flex-col gap-2">
                     <h2 className="text-2xl font-semibold">
@@ -140,6 +161,6 @@ export default function AbacoPageClient() {
                     </button>
                 </div>
             )}
-        </>
+        </div>
     );
 }
