@@ -10,6 +10,8 @@
         "lint:fix": "eslint --fix"
     },
     "dependencies": {
+        "@next/eslint-plugin-next": "^15.5.3",
+        "eslint-plugin-react-hooks": "^5.2.0",
         "next": "15.5.3",
         "react": "19.1.0",
         "react-dom": "19.1.0"
