@@ -12,7 +12,7 @@ export enum GameStatus {
 const DEFAULT_START_WORD = "Abaco";
 const DEFAULT_END_WORD = "Zuzzurellone";
 
-type InitialState = {
+export type InitialState = {
     wordToGuess: string;
     currentGuess: string;
     gameStatus: GameStatus;
@@ -69,6 +69,17 @@ export function gameReducer(state: InitialState, action: ActionGame) {
                     errorMessage: "La parola non può essere vuota",
                 };
             }
+
+            if (
+                wordToGuessNormalized <= startWordNormalized ||
+                wordToGuessNormalized >= endWordNormalized
+            ) {
+                return {
+                    ...state,
+                    errorMessage: `La parola deve essere compresa tra ${startWord} e ${endWord}`,
+                };
+            }
+
             return {
                 ...state,
                 errorMessage: "",
