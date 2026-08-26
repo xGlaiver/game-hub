@@ -46,4 +46,8 @@ describe("normalize_string", () => {
     it("non rimuove gli spazi interni alla parola", () => {
         expect(normalize_string("  Ci Ao  ")).toBe("ci ao");
     });
+
+    it("rimuove tabulazioni/a capo", () => {
+        expect(normalize_string("\tMelone\n")).toBe("melone")
+    })
 });

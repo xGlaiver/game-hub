@@ -86,6 +86,12 @@ export function gameReducer(state: InitialState, action: ActionGame) {
                 gameStatus: GameStatus.Playing,
             };
         case "try_to_guess_word":
+            if(state.gameStatus !== GameStatus.Playing) {
+                return {
+                    ...state,
+                    errorMessage: "Non puoi indovinare la parola se non hai ancora inserito la parola da indovinare",
+                };
+            }
             if (currentGuessNormalized === "") {
                 return {
                     ...state,

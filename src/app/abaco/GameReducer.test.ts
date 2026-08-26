@@ -311,6 +311,14 @@ describe("try_to_guess_word", () => {
         expect(next.errorMessage).toBe("La parola inserita è fuori dal range");
         expect(next.numberAttempts).toBe(afterCarota.numberAttempts);
     });
+
+    it("rifiuta un tentativo se la partita non è in corso", () => {
+        const next = gameReducer(stateWith({gameStatus: GameStatus.Start}), {
+            type: "try_to_guess_word",
+        })
+
+        expect(next).toEqual({...initialState, errorMessage: "Non puoi indovinare la parola se non hai ancora inserito la parola da indovinare"})
+    })
 });
 
 describe("reset", () => {

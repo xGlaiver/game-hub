@@ -126,6 +126,27 @@ describe("turno del Giocatore 2", () => {
         expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
     });
 
+    it("nasconde l'errore dopo un tentativo valido", async () => {
+        const user = setup();
+        await startGame(user);
+
+        await user.click(confirmButton());
+
+        expect(
+            screen.getByText("La parola non può essere vuota"),
+        ).toBeInTheDocument();
+        expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
+
+        await submit(user, "carota");
+
+        expect(
+            screen.queryByText("La parola non può essere vuota"),
+        ).not.toBeInTheDocument();
+        expect(input()).toHaveValue("");
+        expect(attempts()).toHaveTextContent("Numero di tentativi: 1");
+
+    });
+
     it("segnala un tentativo fuori dal range senza consumarlo", async () => {
         const user = setup();
         await startGame(user);
