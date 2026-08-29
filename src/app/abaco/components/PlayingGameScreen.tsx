@@ -1,6 +1,8 @@
+import { useId, useState } from "react";
 import { normalize_string } from "$/utils/string_manipulation";
 import Modal from "$/app/components/Modal";
-import { useState } from "react";
+import RangeRail from "./RangeRail";
+import AttemptCounter from "./AttemptCounter";
 
 type Props = {
     currentGuess: string;
@@ -11,6 +13,8 @@ type Props = {
     onEnter: () => void;
     onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     onGiveUp: () => void;
+    errorId?: string;
+    hasError?: boolean;
 };
 
 const PlayingGameScreen = ({
@@ -22,41 +26,62 @@ const PlayingGameScreen = ({
     onEnter,
     onKeyDown,
     onGiveUp,
+    errorId,
+    hasError = false,
 }: Props) => {
-
+    const inputId = useId();
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div>
-            <h4>Giocatore 2, indovina la parola:</h4>
+        <div className="flex flex-col gap-4">
+            <div className="pannello p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="inline-flex items-center rounded-targa border-2 border-ink-dark bg-info px-2 py-0.5 font-decal text-decal uppercase text-ink-dark">
+                        2UP
+                    </p>
+                    <AttemptCounter value={numberAttempts} />
+                </div>
 
-            <p className="text-2xl font-medium mt-3">
-                {startWord} - {endWord}
-            </p>
-            <div className="flex gap-2 mt-4">
-                <input
-                    className="border border-gray-300 rounded-md p-2 text-black bg-amber-50"
-                    type="text"
-                    value={currentGuess}
-                    onChange={(e) =>
-                        setCurrentGuess(normalize_string(e.target.value))
-                    }
-                    onKeyDown={onKeyDown}
-                />
-                <button
-                    className="border border-gray-300 rounded-md p-2 text-black bg-amber-50 cursor-pointer hover:bg-amber-200 transition"
-                    onClick={onEnter}
+                <h2 className="mt-3 font-testo text-titolo uppercase text-ink">
+                    Giocatore 2, indovina la parola
+                </h2>
+
+                <label
+                    htmlFor={inputId}
+                    className="mt-5 block font-decal text-decal uppercase text-ink-muted"
                 >
-                    Conferma
+                    Il tuo tentativo
+                </label>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <input
+                        id={inputId}
+                        className="fessura max-w-xs"
+                        type="text"
+                        autoComplete="off"
+                        spellCheck={false}
+                        aria-invalid={hasError}
+                        aria-describedby={hasError ? errorId : undefined}
+                        value={currentGuess}
+                        onChange={(e) =>
+                            setCurrentGuess(normalize_string(e.target.value))
+                        }
+                        onKeyDown={onKeyDown}
+                    />
+                    <button className="cap" onClick={onEnter}>
+                        Conferma
+                    </button>
+                </div>
+
+                <button
+                    className="cap-quieto mt-6"
+                    onClick={() => setIsOpen(true)}
+                >
+                    Mi arrendo
                 </button>
             </div>
-            <p className="mt-4">Numero di tentativi: {numberAttempts}</p>
-            <button
-                className="border border-gray-300 rounded-md p-2 text-black bg-amber-50 cursor-pointer hover:bg-amber-200 transition mt-4"
-                onClick={() => setIsOpen(true)}
-            >
-                Mi arrendo
-            </button>
+
+            <RangeRail startWord={startWord} endWord={endWord} />
+
             <Modal
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}

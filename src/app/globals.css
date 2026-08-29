@@ -1,7 +1,485 @@
 @import "tailwindcss";
 
-html,
-body {
-    min-height: 100vh;
-    height: 100%;
+/* =====================================================================
+   GAME HUB — "Sala Gettoni"
+   Il sito e un mobile da sala giochi visto in penombra.
+
+   REGOLA UNICA: si preme su cio che SPORGE (.cap), si scrive in cio che
+   RIENTRA (.fessura). Nessun elemento decorativo ha ombra dura.
+
+   REGOLA DI SCARSITA: --color-accent (giallo) compare SOLO su faccia del
+   cappuccio primario, anello di focus, caret dell'input, segmento vivo del
+   binario, tessere del prefisso bloccato. Mai su titoli, bordi o icone.
+   ===================================================================== */
+
+@theme {
+    /* --- SUPERFICI. Mai #000: la plastica scura ha un cast blu-violetto.
+       La profondita NON e affidata alla luminanza (i livelli distano
+       1.17-1.27:1, invisibili su pannelli scadenti) ma al bordo 2px
+       --color-edge, obbligatorio su ogni pannello. */
+    --color-sala: #0a0c16; /* livello 0 — fondo pagina */
+    --color-mobile: #1b2038; /* livello 1 — card, pannelli, modale */
+    --color-plancia: #262b4a; /* livello 2 — header, fascia comandi, targhe */
+    --color-slot: #04050c; /* incassato — input, canale del binario */
+
+    /* --- INCHIOSTRI */
+    --color-ink: #f2efe6; /* 16.96 su sala / 13.94 mobile / 11.96 plancia */
+    --color-ink-muted: #a8aed0; /* 8.94 / 7.35 / 6.31 */
+    --color-ink-dark: #14101a; /* testo sui cappucci. Peggior caso 8.12:1 */
+
+    /* --- TINTE SERIGRAFICHE. Quattro, e sole quattro. Ognuna e valida in
+       ENTRAMBI i ruoli: faccia di cappuccio con ink-dark sopra (>= 9.10:1)
+       e testo su superficie scura (>= 6.66:1).
+       La parete (-wall) e la tinta brunita, MAI il nero: >= 3.14:1 su
+       mobile e >= 3.82:1 su sala, cosi la corsa del pulsante si vede. */
+    --color-accent: #ffc21a;
+    --color-accent-wall: #b37c00;
+    --color-danger: #ff9a7e;
+    --color-danger-wall: #b0523a;
+    --color-success: #6fe9ac;
+    --color-success-wall: #31996a;
+    --color-info: #8cc0ff;
+    --color-info-wall: #4272b0;
+
+    /* --- STRUTTURA */
+    --color-edge: #7c84be; /* 5.48 sala / 4.50 mobile / 3.86 plancia / 5.72 slot */
+    --color-chrome: #b8bedc;
+
+    /* --- MOLDING: identita del gioco, NON semantica. Mappati 1:1 sui
+       valori di GameAccent in src/games/registry.ts. */
+    --color-mold-lime: #c8f24a;
+    --color-mold-magenta: #ff7fc4;
+    --color-mold-ciano: #5fe0f0;
+    --color-mold-ambra: #ffa43d;
+
+    /* --- FONT (variabili iniettate da next/font in layout.tsx) */
+    --font-insegna: var(--font-bungee), "Archivo Black", Impact, system-ui, sans-serif;
+    --font-testo: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
+    --font-decal: var(--font-azeret), ui-monospace, Consolas, monospace;
+
+    /* --- SCALA TIPOGRAFICA. Salti volutamente non uniformi: un cabinato ha
+       la scritta grossa e la decal piccola, niente di intermedio. */
+    --text-decal: 0.75rem;
+    --text-decal--line-height: 1;
+    --text-decal--letter-spacing: 0.14em;
+    --text-decal--font-weight: 700;
+
+    --text-body-sm: 0.875rem;
+    --text-body-sm--line-height: 1.5;
+
+    --text-body: 1rem;
+    --text-body--line-height: 1.6;
+
+    --text-hud: 1.125rem;
+    --text-hud--line-height: 1.2;
+    --text-hud--letter-spacing: 0.08em;
+    --text-hud--font-weight: 700;
+
+    --text-titolo: clamp(1.25rem, 2.2vw, 1.5rem);
+    --text-titolo--line-height: 1.15;
+    --text-titolo--letter-spacing: 0.02em;
+    --text-titolo--font-weight: 800;
+
+    --text-insegna: clamp(1.75rem, 8.5vw, 3.5rem);
+    --text-insegna--line-height: 0.95;
+    --text-insegna--letter-spacing: 0.015em;
+
+    /* Riga 2 del lockup, dimensionata sul caso peggiore reale:
+       "ZUZZURELLONE" = 12 glifi Bungee (~8.6em). Non va mai in overflow. */
+    --text-insegna-2: clamp(1.375rem, 6.4vw, 2.5rem);
+    --text-insegna-2--line-height: 0.95;
+    --text-insegna-2--letter-spacing: 0.015em;
+
+    --text-punteggio: clamp(2rem, 5vw, 3rem);
+    --text-punteggio--line-height: 1;
+    --text-punteggio--font-weight: 700;
+
+    /* --- RAGGI. La plastica stampata ha spigoli stretti. */
+    --radius-cap: 3px;
+    --radius-pannello: 4px;
+    --radius-slot: 3px;
+    --radius-targa: 2px;
+    --radius-paratia: 50%; /* UNICO tondo: le uniche cose che si muovono */
+
+    /* --- MOVIMENTO */
+    --ease-fondo: linear; /* andata: un pulsante vero non ha curva */
+    --ease-molla: cubic-bezier(0.2, 0.9, 0.3, 1.2); /* ritorno */
+    --ease-serranda: cubic-bezier(0.22, 1, 0.36, 1); /* la saracinesca */
+
+    --animate-clamp: railClamp 180ms steps(2, end);
+    --animate-lock: letterLock 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    --animate-slam: slamIn 260ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
+    --animate-decal: decalStamp 140ms ease-out;
+    --animate-nope: nope 320ms ease-out;
+    --animate-reel: reelTick 180ms ease-out;
+    --animate-marquee: marqueeRun 1.4s linear infinite;
+
+    @keyframes railClamp {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 var(--color-accent);
+        }
+        50% {
+            box-shadow: 0 0 0 4px var(--color-accent);
+        }
+    }
+    @keyframes letterLock {
+        0% {
+            transform: translateY(-8px) scale(1.14);
+        }
+        60% {
+            transform: translateY(0) scale(0.96);
+        }
+        100% {
+            transform: translateY(0) scale(1);
+        }
+    }
+    @keyframes slamIn {
+        from {
+            transform: scale(0.94);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    @keyframes decalStamp {
+        from {
+            transform: scale(1.06);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    @keyframes nope {
+        0% {
+            transform: translateX(0);
+        }
+        20% {
+            transform: translateX(-7px);
+        }
+        45% {
+            transform: translateX(7px);
+        }
+        70% {
+            transform: translateX(-4px);
+        }
+        100% {
+            transform: translateX(0);
+        }
+    }
+    @keyframes reelTick {
+        from {
+            transform: translateY(-0.14em);
+            filter: brightness(1.5);
+        }
+        to {
+            transform: translateY(0);
+            filter: brightness(1);
+        }
+    }
+    @keyframes marqueeRun {
+        from {
+            background-position: 0 0;
+        }
+        to {
+            background-position: 24px 0;
+        }
+    }
+}
+
+@layer base {
+    html {
+        color-scheme: dark; /* impegno deliberato: e un mobile, non un foglio */
+    }
+    html,
+    body {
+        min-height: 100%;
+    }
+    body {
+        background-color: var(--color-sala);
+        color: var(--color-ink);
+        font-family: var(--font-testo);
+        font-size: var(--text-body);
+        line-height: 1.6;
+    }
+    ::selection {
+        background: var(--color-accent);
+        color: var(--color-ink-dark);
+    }
+}
+
+/* =====================================================================
+   COMPONENTI
+   Le ombre multi-layer NON stanno in --shadow-* di @theme: Tailwind vi
+   inietterebbe --tw-shadow-color su ENTRAMBI i layer e non si potrebbe
+   ricolorare solo la parete. Qui sono classi vere.
+   ===================================================================== */
+@layer components {
+    /* ---- PANNELLO: card, pannello di gioco, corpo del modale ---------- */
+    .pannello {
+        background-color: var(--color-mobile);
+        border: 2px solid var(--color-edge);
+        border-radius: var(--radius-pannello);
+        box-shadow:
+            0 4px 0 var(--color-edge),
+            0 14px 30px rgb(0 0 0 / 0.6);
+    }
+
+    /* ---- CAPPUCCIO: tutto cio che si preme --------------------------- */
+    .cap {
+        --cap-face: var(--color-accent);
+        --cap-wall: var(--color-accent-wall);
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.15rem;
+        background-color: var(--cap-face);
+        color: var(--color-ink-dark);
+        border: 0;
+        border-radius: var(--radius-cap);
+        font-family: var(--font-decal);
+        font-weight: 700;
+        font-size: var(--text-decal);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 0.38),
+            0 4px 0 var(--cap-wall);
+        transition:
+            transform 110ms var(--ease-molla),
+            box-shadow 110ms var(--ease-molla),
+            filter 110ms linear;
+    }
+    /* Faccia chiara + inchiostro scuro: schiarire ALZA il contrasto */
+    .cap:hover {
+        filter: brightness(1.06);
+    }
+    .cap:active {
+        transform: translateY(4px);
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 0.38),
+            0 0 0 var(--cap-wall);
+        transition:
+            transform 60ms var(--ease-fondo),
+            box-shadow 60ms var(--ease-fondo);
+    }
+    .cap:focus-visible {
+        outline: 3px solid var(--color-accent);
+        outline-offset: 3px;
+    }
+    /* Secondo anello scuro: si vede anche contro il cappuccio giallo */
+    .cap:focus-visible::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius-cap);
+        box-shadow: inset 0 0 0 2px var(--color-ink-dark);
+        pointer-events: none;
+    }
+    .cap:disabled {
+        filter: saturate(0.25) brightness(0.9);
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 0.2),
+            0 2px 0 var(--cap-wall);
+        cursor: not-allowed;
+    }
+
+    .cap-danger {
+        --cap-face: var(--color-danger);
+        --cap-wall: var(--color-danger-wall);
+        padding-left: 1.5rem;
+    }
+    .cap-success {
+        --cap-face: var(--color-success);
+        --cap-wall: var(--color-success-wall);
+    }
+    .cap-info {
+        --cap-face: var(--color-info);
+        --cap-wall: var(--color-info-wall);
+    }
+
+    /* Zebra sul fianco del distruttivo: il pericolo non puo essere affidato
+       al colore, perche in deuteranopia giallo e corallo collassano. */
+    .cap-danger::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 10px;
+        border-radius: var(--radius-cap) 0 0 var(--radius-cap);
+        background: repeating-linear-gradient(
+            45deg,
+            var(--color-ink-dark) 0 4px,
+            transparent 4px 8px
+        );
+    }
+
+    /* ---- BOTTONE QUIETO: non estruso, perche non deve invitare -------- */
+    .cap-quieto {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.1rem;
+        background: transparent;
+        color: var(--color-ink-muted);
+        border: 2px solid var(--color-edge);
+        border-radius: var(--radius-cap);
+        font-family: var(--font-decal);
+        font-weight: 700;
+        font-size: var(--text-decal);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+            color 120ms linear,
+            border-color 120ms linear;
+    }
+    .cap-quieto:hover {
+        color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+    .cap-quieto:active {
+        box-shadow: inset 0 2px 0 rgb(0 0 0 / 0.5);
+    }
+    .cap-quieto:focus-visible {
+        outline: 3px solid var(--color-accent);
+        outline-offset: 3px;
+    }
+
+    /* ---- FESSURA: l'input. Una parola segreta si imbuca. ------------- */
+    .fessura {
+        width: 100%;
+        background-color: var(--color-slot);
+        color: var(--color-ink);
+        border: 2px solid var(--color-edge); /* 5.72:1: identificabile a riposo */
+        border-radius: var(--radius-slot);
+        padding: 0.75rem 0.9rem;
+        font-family: var(--font-decal);
+        font-weight: 500;
+        font-size: 1.0625rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        caret-color: var(--color-accent);
+        box-shadow:
+            inset 0 2px 0 rgb(0 0 0 / 0.75),
+            inset 0 -1px 0 rgb(184 190 220 / 0.2);
+        transition:
+            border-color 120ms linear,
+            box-shadow 120ms linear;
+    }
+    .fessura::placeholder {
+        color: var(--color-ink-muted);
+        text-transform: none;
+        letter-spacing: 0.04em;
+    }
+    .fessura:focus-visible {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow:
+            inset 0 2px 0 rgb(0 0 0 / 0.75),
+            inset 0 -3px 0 var(--color-accent);
+    }
+    .fessura[aria-invalid="true"] {
+        border-color: var(--color-danger);
+        box-shadow:
+            inset 0 2px 0 rgb(0 0 0 / 0.75),
+            inset 0 -3px 0 var(--color-danger);
+    }
+    /* La parola del Giocatore 1 non deve essere leggibile dal Giocatore 2,
+       che e nella stessa stanza. Resta type="text" per non perdere il
+       ruolo textbox. */
+    .fessura-mascherata {
+        -webkit-text-security: disc;
+        text-security: disc;
+    }
+
+    /* ---- TARGHETTA HUD ---------------------------------------------- */
+    .targa {
+        background-color: var(--color-plancia);
+        border-left: 3px solid var(--color-chrome);
+        border-radius: var(--radius-targa);
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* ---- BINARIO ----------------------------------------------------- */
+    .rail-paratia {
+        position: absolute;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+        border-radius: var(--radius-paratia);
+        background: var(--color-accent);
+        border: 2px solid var(--color-ink-dark);
+        transition: left 420ms var(--ease-serranda);
+    }
+
+    /* ---- CARD: il mobile si dondola sui piedini, mai scale ------------ */
+    .card-cabinato {
+        transition:
+            transform 160ms var(--ease-molla),
+            box-shadow 160ms var(--ease-molla);
+    }
+    .card-cabinato:hover,
+    .card-cabinato:focus-within {
+        transform: translateY(-3px);
+        box-shadow:
+            0 7px 0 var(--color-edge),
+            0 18px 34px rgb(0 0 0 / 0.65);
+    }
+
+    /* ---- INSEGNA ----------------------------------------------------- */
+    .insegna-3d {
+        text-shadow:
+            1px 1px 0 var(--color-danger-wall),
+            2px 2px 0 var(--color-danger-wall),
+            3px 3px 0 var(--color-ink-dark);
+    }
+    .rail-lampadine {
+        background: repeating-radial-gradient(
+            circle at 6px 50%,
+            var(--color-accent) 0 2px,
+            transparent 2px 12px
+        );
+        background-size: 24px 100%;
+    }
+}
+
+/* =====================================================================
+   MOVIMENTO RIDOTTO
+   Non basta `animation: none`: gli stati finali devono essere gia scritti
+   nelle classi base — qui e vero, le animazioni sono solo offset d'ingresso.
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 120ms !important;
+    }
+    .cap:active {
+        transform: none;
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 0.38),
+            0 1px 0 var(--cap-wall);
+    }
+    .card-cabinato:hover,
+    .card-cabinato:focus-within {
+        transform: none;
+    }
+    .rail-paratia {
+        transition: none !important;
+    }
+    .rail-lampadine {
+        animation: none !important;
+    }
 }

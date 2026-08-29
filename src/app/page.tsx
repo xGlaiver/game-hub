@@ -1,36 +1,53 @@
-import Link from 'next/link'
+import GameCard, { EmptySlot } from "./components/GameCard";
+import { games, playableGames } from "$/games/registry";
 
-const listGames = [{ name: "Abaco Zuzzurellone", link: "/abaco" }];
+const MIN_SLOTS = 3;
 
 export default function Home() {
+    // Con pochi giochi la prima card occupa due colonne. E una classe
+    // condizionale, non una struttura diversa: da 3 giochi in su sparisce.
+    const inEvidenza = playableGames.length <= 2;
+    const slotLiberi = Math.max(0, MIN_SLOTS - games.length);
+
     return (
-        <div className="h-full bg-gradient-to-b from-cyan-900 to-blue-900 text-white">
-            <div className="max-w-4xl mx-auto p-4">
-                <div className="flex flex-col items-center justify-center pt-6 ">
-                    <h1 className="text-4xl font-bold text-center">
-                        Benvenuto alla Game Hub
-                    </h1>
-                    <p className="text-lg text-center">
-                        La tua destinazione unica per tutto ciò che riguarda il
-                        gaming.
-                    </p>
-                    <div className="flex flex-col items-center justify-center mt-6 bg-cyan-950 w-full p-6 rounded-lg shadow-lg">
-                        <h2 className="text-2xl font-semibold mb-4">Giochi</h2>
-                        <ul className="space-y-2">
-                            {listGames.map((game) => (
-                                <li key={game.name}>
-                                    <Link
-                                        href={game.link}
-                                        className="text-cyan-400 hover:underline"
-                                    >
-                                        {game.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </div>
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+            <p className="font-decal text-decal uppercase text-accent">
+                Due giocatori · un solo schermo
+            </p>
+            <h1 className="insegna-3d mt-3 font-insegna uppercase text-ink">
+                <span className="block text-insegna">Game</span>
+                <span className="block text-insegna-2 text-accent">Hub</span>
+            </h1>
+            <p className="mt-5 max-w-prose text-body text-ink-muted">
+                Giochi da fare in due, seduti davanti allo stesso schermo.
+                Niente account, niente attesa: scegli un mobile e infila il
+                gettone.
+            </p>
+
+            <h2 className="mt-12 font-decal text-decal uppercase text-ink-muted">
+                La sala
+            </h2>
+            <ul className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                {games.map((game, i) =>
+                    game.status === "disponibile" ? (
+                        <GameCard
+                            key={game.slug}
+                            game={game}
+                            featured={inEvidenza && i === 0}
+                        />
+                    ) : (
+                        <EmptySlot key={game.slug} />
+                    ),
+                )}
+                {Array.from({ length: slotLiberi }, (_, i) => (
+                    <EmptySlot key={`slot-${i}`} />
+                ))}
+            </ul>
+
+            <div
+                aria-hidden
+                className="mt-10 h-16 bg-gradient-to-b from-transparent to-black/45"
+            />
         </div>
     );
 }

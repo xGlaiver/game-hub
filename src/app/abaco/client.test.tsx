@@ -13,8 +13,9 @@ const setup = (): User => {
 
 const input = () => screen.getByRole("textbox");
 const confirmButton = () => screen.getByRole("button", { name: "Conferma" });
-const range = () => screen.getByText(/ - /);
-const attempts = () => screen.getByText(/Numero di tentativi:/);
+const range = () =>
+    screen.getByRole("region", { name: "Intervallo di ricerca" });
+const attempts = () => screen.getByRole("status", { name: "Tentativi" });
 
 /**
  * Riscrive il campo da zero e conferma col bottone. La `clear` serve perche
@@ -28,6 +29,15 @@ const submit = async (user: User, word: string) => {
 
 /** Avvia una partita con "melone" come parola segreta. */
 const startGame = async (user: User) => submit(user, "melone");
+
+/**
+ * Il binario mostra i due estremi come elementi distinti: si asserisce
+ * l'informazione (quali sono i limiti adesso), non come viene formattata.
+ */
+const expectRange = (from: string, to: string) => {
+    expect(range()).toHaveTextContent(from);
+    expect(range()).toHaveTextContent(to);
+};
 
 describe("turno del Giocatore 1", () => {
     it("mostra il form per la parola segreta all'avvio", () => {
@@ -80,8 +90,8 @@ describe("turno del Giocatore 1", () => {
         expect(
             screen.getByRole("heading", { name: /Giocatore 2/ }),
         ).toBeInTheDocument();
-        expect(range()).toHaveTextContent("Abaco - Zuzzurellone");
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
+        expectRange("Abaco", "Zuzzurellone");
+        expect(attempts()).toHaveTextContent("0");
     });
 
     it("conferma la parola anche col tasto Invio", async () => {
@@ -123,7 +133,7 @@ describe("turno del Giocatore 2", () => {
         expect(
             screen.getByText("La parola non può essere vuota"),
         ).toBeInTheDocument();
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
+        expect(attempts()).toHaveTextContent("0");
     });
 
     it("nasconde l'errore dopo un tentativo valido", async () => {
@@ -135,7 +145,7 @@ describe("turno del Giocatore 2", () => {
         expect(
             screen.getByText("La parola non può essere vuota"),
         ).toBeInTheDocument();
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
+        expect(attempts()).toHaveTextContent("0");
 
         await submit(user, "carota");
 
@@ -143,7 +153,7 @@ describe("turno del Giocatore 2", () => {
             screen.queryByText("La parola non può essere vuota"),
         ).not.toBeInTheDocument();
         expect(input()).toHaveValue("");
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 1");
+        expect(attempts()).toHaveTextContent("1");
 
     });
 
@@ -156,8 +166,8 @@ describe("turno del Giocatore 2", () => {
         expect(
             screen.getByText("La parola inserita è fuori dal range"),
         ).toBeInTheDocument();
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
-        expect(range()).toHaveTextContent("Abaco - Zuzzurellone");
+        expect(attempts()).toHaveTextContent("0");
+        expectRange("Abaco", "Zuzzurellone");
     });
 
     it("alza il limite inferiore con un tentativo troppo basso", async () => {
@@ -166,8 +176,8 @@ describe("turno del Giocatore 2", () => {
 
         await submit(user, "carota");
 
-        expect(range()).toHaveTextContent("Carota - Zuzzurellone");
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 1");
+        expectRange("Carota", "Zuzzurellone");
+        expect(attempts()).toHaveTextContent("1");
     });
 
     it("abbassa il limite superiore con un tentativo troppo alto", async () => {
@@ -176,8 +186,8 @@ describe("turno del Giocatore 2", () => {
 
         await submit(user, "patata");
 
-        expect(range()).toHaveTextContent("Abaco - Patata");
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 1");
+        expectRange("Abaco", "Patata");
+        expect(attempts()).toHaveTextContent("1");
     });
 
     it("lascia nel campo il tentativo rifiutato, pronto da correggere", async () => {
@@ -217,7 +227,7 @@ describe("turno del Giocatore 2", () => {
 
         await user.type(input(), "carota{Enter}");
 
-        expect(range()).toHaveTextContent("Carota - Zuzzurellone");
+        expectRange("Carota", "Zuzzurellone");
     });
 
     it("restringe il range progressivamente lungo la partita", async () => {
@@ -225,20 +235,20 @@ describe("turno del Giocatore 2", () => {
         await startGame(user);
 
         await submit(user, "carota");
-        expect(range()).toHaveTextContent("Carota - Zuzzurellone");
+        expectRange("Carota", "Zuzzurellone");
 
         await submit(user, "patata");
-        expect(range()).toHaveTextContent("Carota - Patata");
+        expectRange("Carota", "Patata");
 
         await submit(user, "nespola");
-        expect(range()).toHaveTextContent("Carota - Nespola");
+        expectRange("Carota", "Nespola");
 
         // "banana" e ormai fuori dai limiti aggiornati.
         await submit(user, "banana");
         expect(
             screen.getByText("La parola inserita è fuori dal range"),
         ).toBeInTheDocument();
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 3");
+        expect(attempts()).toHaveTextContent("3");
     });
 
     it("chiede conferma prima di far arrendere", async () => {
@@ -264,7 +274,7 @@ describe("turno del Giocatore 2", () => {
         );
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(range()).toHaveTextContent("Abaco - Zuzzurellone");
+        expectRange("Abaco", "Zuzzurellone");
     });
 
     it("chiude il modale anche col tasto Escape", async () => {
@@ -308,7 +318,7 @@ describe("vittoria", () => {
             screen.getByRole("heading", { name: /Complimenti/ }),
         ).toBeInTheDocument();
         expect(screen.getByText("melone")).toBeInTheDocument();
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 3");
+        expect(attempts()).toHaveTextContent("3");
     });
 
     it("nasconde il campo del tentativo", async () => {
@@ -338,7 +348,7 @@ describe("vittoria", () => {
 
         // La partita successiva riparte davvero da zero.
         await submit(user, "nespola");
-        expect(range()).toHaveTextContent("Abaco - Zuzzurellone");
-        expect(attempts()).toHaveTextContent("Numero di tentativi: 0");
+        expectRange("Abaco", "Zuzzurellone");
+        expect(attempts()).toHaveTextContent("0");
     });
 });

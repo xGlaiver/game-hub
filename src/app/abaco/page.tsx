@@ -1,25 +1,34 @@
+import Link from "next/link";
 import AbacoPageClient from "./client";
+import { getGame } from "$/games/registry";
+
+const game = getGame("abaco");
 
 export default function AbacoPage() {
     return (
-        <div className="h-full bg-gradient-to-b from-cyan-900 to-blue-900 text-white">
-            <div className="max-w-4xl mx-auto p-4">
-                <div className="flex flex-col gap-2 items-center justify-center pt-6 ">
-                    <h1 className="text-4xl font-bold text-center">
-                        Abaco - Zuzzurellone
-                    </h1>
-                    <p className="text-lg text-center">
-                        Benvenuto alla pagina di Abaco - Zuzzurellone.
-                    </p>
-                    <p className="text-base text-center">
-                        Indovina la parola racchiusa tra le parole &quot;abaco&quot; e
-                        &quot;zuzzurellone!&quot;
-                    </p>
-                    {/* Contenuto del gioco Abaco Zuzzurellone */}
-                    <div className="flex flex-col items-center justify-center mt-6 bg-cyan-950 w-full p-6 rounded-lg shadow-lg">
-                        <AbacoPageClient />
-                    </div>
-                </div>
+        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
+            <Link
+                href="/"
+                className="cap-quieto inline-flex focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-accent"
+            >
+                ← Sala
+            </Link>
+
+            {/* Lockup su due righe: "Zuzzurellone" a 12 glifi in Bungee non
+                sta su una riga sola a nessuna larghezza utile. */}
+            <h1 className="insegna-3d mt-6 font-insegna uppercase text-ink">
+                <span className="block text-insegna">Abaco</span>
+                <span className="block text-insegna-2 text-accent">
+                    Zuzzurellone
+                </span>
+            </h1>
+
+            <p className="mt-4 max-w-prose text-body text-ink-muted">
+                {game?.description}
+            </p>
+
+            <div className="mt-8">
+                <AbacoPageClient />
             </div>
         </div>
     );

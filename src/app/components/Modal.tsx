@@ -4,6 +4,11 @@ import { createPortal } from "react-dom";
 /**
  * `primary` per un'azione che vuoi incoraggiare, `danger` per una che vuoi
  * far pensare due volte (cancellare, arrendersi).
+ *
+ * In entrambe le varianti il cappuccio giallo sta sull'azione che si vuole
+ * suggerire: confermare se e primary, tornare indietro se e danger. Il giallo
+ * e la risorsa scarsa del sistema e vuol dire sempre "la prossima cosa da
+ * toccare".
  */
 export type ModalVariant = "primary" | "danger";
 
@@ -18,11 +23,6 @@ type Props = {
     confirmLabel?: string;
     cancelLabel?: string;
     variant?: ModalVariant;
-};
-
-const CONFIRM_STYLES: Record<ModalVariant, string> = {
-    primary: "bg-emerald-600 hover:bg-emerald-500 border-emerald-700",
-    danger: "bg-red-700 hover:bg-red-600 border-red-800",
 };
 
 const FOCUSABLE =
@@ -87,42 +87,70 @@ const Modal = ({
 
     if (!isOpen) return null;
 
+    const isDanger = variant === "danger";
+
     return createPortal(
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* La sala si spegne, non si sfoca: nessun blur, nessun vetro. */}
             <div
                 data-testid="modal-backdrop"
                 aria-hidden="true"
-                className="absolute inset-0 bg-black opacity-50"
+                className="absolute inset-0 bg-[#05060e]/85"
                 onClick={onClose}
             />
+
             <div
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
                 aria-describedby={descriptionId}
-                className="relative z-10 bg-white text-black p-6 rounded-lg max-w-md shadow-xl"
+                className="pannello animate-slam relative z-10 w-full max-w-[30rem] overflow-hidden motion-reduce:animate-none"
             >
-                <h2 id={titleId} className="text-2xl font-semibold">
-                    {title}
-                </h2>
-                <p id={descriptionId} className="mt-2">
-                    {description}
-                </p>
-                <div className="flex gap-2 mt-6">
-                    <button
-                        className={`border rounded-md p-2 text-white cursor-pointer transition ${CONFIRM_STYLES[variant]}`}
-                        onClick={onConfirm}
+                {/* Fascia che dichiara la variante prima ancora del titolo.
+                    La zebra serve perche giallo e corallo collassano in
+                    deuteranopia: il pericolo non puo essere solo colore. */}
+                <div
+                    aria-hidden
+                    className={
+                        isDanger
+                            ? "h-1.5 bg-[repeating-linear-gradient(45deg,var(--color-accent)_0_10px,var(--color-ink-dark)_10px_20px)]"
+                            : "h-1.5 bg-accent"
+                    }
+                />
+
+                <div className="p-6">
+                    <h2
+                        id={titleId}
+                        className="font-testo text-titolo uppercase text-ink"
                     >
-                        {confirmLabel}
-                    </button>
-                    <button
-                        ref={cancelRef}
-                        className="border border-gray-300 rounded-md p-2 text-black bg-amber-50 cursor-pointer hover:bg-amber-200 transition"
-                        onClick={onClose}
+                        {title}
+                    </h2>
+                    <p
+                        id={descriptionId}
+                        className="mt-2 text-body text-ink-muted"
                     >
-                        {cancelLabel}
-                    </button>
+                        {description}
+                    </p>
+
+                    {/* DOM: prima confirm, poi cancel (il focus trap conta su
+                        questo ordine). flex-row-reverse mette il distruttivo a
+                        destra e lascia a sinistra, gia in focus, la via d'uscita. */}
+                    <div className="mt-6 flex flex-row-reverse justify-end gap-3">
+                        <button
+                            className={isDanger ? "cap cap-danger" : "cap"}
+                            onClick={onConfirm}
+                        >
+                            {confirmLabel}
+                        </button>
+                        <button
+                            ref={cancelRef}
+                            className={isDanger ? "cap" : "cap-quieto"}
+                            onClick={onClose}
+                        >
+                            {cancelLabel}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>,
