@@ -321,6 +321,44 @@ describe("try_to_guess_word", () => {
     })
 });
 
+describe("give_up", () => {
+    it("porta lo stato a Lost conservando parola e tentativi", () => {
+        const next = gameReducer(playing({ numberAttempts: 2 }), {
+            type: "give_up",
+        });
+
+        expect(next.gameStatus).toBe(GameStatus.Lost);
+        expect(next.numberAttempts).toBe(2);
+        expect(next.wordToGuess).toBe("melone");
+    });
+
+    it("cancella un errore rimasto sullo schermo", () => {
+        const next = gameReducer(
+            playing({ errorMessage: "La parola inserita è fuori dal range" }),
+            { type: "give_up" },
+        );
+
+        expect(next.errorMessage).toBe("");
+    });
+
+    // Stessa guardia di try_to_guess_word: le azioni di gioco valgono solo
+    // a partita in corso.
+    it.each([
+        ["non e ancora iniziata", GameStatus.Start],
+        ["e gia stata vinta", GameStatus.Won],
+        ["e gia stata persa", GameStatus.Lost],
+    ])("non fa niente se la partita %s", (_caso, gameStatus) => {
+        const previous = playing({ gameStatus });
+
+        const next = gameReducer(previous, { type: "give_up" });
+
+        expect(next.gameStatus).toBe(gameStatus);
+        expect(next.errorMessage).toBe(
+            "Non puoi arrenderti se la partita non è in corso",
+        );
+    });
+});
+
 describe("reset", () => {
     it("riporta allo stato iniziale dopo una vittoria", () => {
         const won = playing({

@@ -240,6 +240,59 @@ describe("turno del Giocatore 2", () => {
         ).toBeInTheDocument();
         expect(attempts()).toHaveTextContent("Numero di tentativi: 3");
     });
+
+    it("chiede conferma prima di far arrendere", async () => {
+        const user = setup();
+        await startGame(user);
+
+        await user.click(screen.getByRole("button", { name: "Mi arrendo" }));
+
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        // la partita non e ancora persa: siamo sempre sul turno del Giocatore 2
+        expect(
+            screen.getByRole("heading", { name: /Giocatore 2/ }),
+        ).toBeInTheDocument();
+    });
+
+    it("torna al gioco se si annulla la resa", async () => {
+        const user = setup();
+        await startGame(user);
+
+        await user.click(screen.getByRole("button", { name: "Mi arrendo" }));
+        await user.click(
+            screen.getByRole("button", { name: "Continua a giocare" }),
+        );
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(range()).toHaveTextContent("Abaco - Zuzzurellone");
+    });
+
+    it("chiude il modale anche col tasto Escape", async () => {
+        const user = setup();
+        await startGame(user);
+
+        await user.click(screen.getByRole("button", { name: "Mi arrendo" }));
+        await user.keyboard("{Escape}");
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(
+            screen.getByRole("heading", { name: /Giocatore 2/ }),
+        ).toBeInTheDocument();
+    });
+
+    it("perde la partita quando si conferma la resa", async () => {
+        const user = setup();
+        await startGame(user);
+
+        await user.click(screen.getByRole("button", { name: "Mi arrendo" }));
+        await user.click(screen.getByRole("button", { name: "Sì, mi arrendo" }));
+
+        expect(
+            screen.getByRole("heading", { name: /hai perso/i }),
+        ).toBeInTheDocument();
+        expect(screen.getByText("melone")).toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
 });
 
 describe("vittoria", () => {

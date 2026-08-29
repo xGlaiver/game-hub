@@ -1,4 +1,6 @@
-import { normalize_string } from "utils/string_manipulation";
+import { normalize_string } from "$/utils/string_manipulation";
+import Modal from "$/app/components/Modal";
+import { useState } from "react";
 
 type Props = {
     currentGuess: string;
@@ -8,6 +10,7 @@ type Props = {
     setCurrentGuess: (word: string) => void;
     onEnter: () => void;
     onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    onGiveUp: () => void;
 };
 
 const PlayingGameScreen = ({
@@ -18,7 +21,11 @@ const PlayingGameScreen = ({
     setCurrentGuess,
     onEnter,
     onKeyDown,
+    onGiveUp,
 }: Props) => {
+
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
         <div>
             <h4>Giocatore 2, indovina la parola:</h4>
@@ -44,6 +51,25 @@ const PlayingGameScreen = ({
                 </button>
             </div>
             <p className="mt-4">Numero di tentativi: {numberAttempts}</p>
+            <button
+                className="border border-gray-300 rounded-md p-2 text-black bg-amber-50 cursor-pointer hover:bg-amber-200 transition mt-4"
+                onClick={() => setIsOpen(true)}
+            >
+                Mi arrendo
+            </button>
+            <Modal
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+                onConfirm={() => {
+                    setIsOpen(false);
+                    onGiveUp();
+                }}
+                variant="danger"
+                title="Vuoi arrenderti?"
+                description="Se ti arrendi, perderai la partita e il Giocatore 1 vincerà."
+                confirmLabel="Sì, mi arrendo"
+                cancelLabel="Continua a giocare"
+            />
         </div>
     );
 };

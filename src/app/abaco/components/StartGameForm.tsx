@@ -1,4 +1,4 @@
-import { normalize_string } from "utils/string_manipulation";
+import { normalize_string } from "$/utils/string_manipulation";
 
 type Props = {
     wordToGuess: string;

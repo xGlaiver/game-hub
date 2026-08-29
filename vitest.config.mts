@@ -11,9 +11,8 @@ const srcDir = path
 export default defineConfig({
     plugins: [react()],
     resolve: {
-        // Replica la risoluzione via `baseUrl: "src/"` del tsconfig,
-        // usata dagli import tipo `utils/string_manipulation`.
-        alias: [{ find: /^utils\//, replacement: `${srcDir}/utils/` }],
+        // Replica il path alias `"$/*": ["./src/*"]` del tsconfig.
+        alias: [{ find: /^\$\//, replacement: `${srcDir}/` }],
     },
     test: {
         environment: "jsdom",

@@ -5,6 +5,7 @@ import PlayingGameScreen from "./components/PlayingGameScreen";
 import WonScreen from "./components/WonScreen";
 import ErrorMessage from "./components/ErrorMessage";
 import { gameReducer, GameStatus, initialState } from "./GameReducer";
+import LostScreen from "./components/LostScreen";
 
 const AbacoPageClient = () => {
     const [stateGame, dispatchGame] = useReducer(gameReducer, initialState);
@@ -51,10 +52,18 @@ const AbacoPageClient = () => {
                     numberAttempts={stateGame.numberAttempts}
                     onEnter={() => dispatchGame({ type: "try_to_guess_word" })}
                     onKeyDown={handleEnterKey}
+                    onGiveUp={() => dispatchGame({ type: "give_up" })}
                 />
             )}
             {stateGame.gameStatus === GameStatus.Won && (
                 <WonScreen
+                    wordToGuess={stateGame.wordToGuess}
+                    numberAttempts={stateGame.numberAttempts}
+                    onReset={() => dispatchGame({ type: "reset" })}
+                />
+            )}
+            {stateGame.gameStatus === GameStatus.Lost && (
+                <LostScreen
                     wordToGuess={stateGame.wordToGuess}
                     numberAttempts={stateGame.numberAttempts}
                     onReset={() => dispatchGame({ type: "reset" })}

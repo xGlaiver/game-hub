@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     capitalizeFirstLetter,
     normalize_string,
-} from "utils/string_manipulation";
+} from "$/utils/string_manipulation";
 
 describe("capitalizeFirstLetter", () => {
     it("rende maiuscola la prima lettera", () => {

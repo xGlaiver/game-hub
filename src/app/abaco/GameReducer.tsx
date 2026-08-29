@@ -1,12 +1,13 @@
 import {
     capitalizeFirstLetter,
     normalize_string,
-} from "utils/string_manipulation";
+} from "$/utils/string_manipulation";
 
 export enum GameStatus {
     Start = "start",
     Won = "won",
     Playing = "playing",
+    Lost = "lost",
 }
 
 const DEFAULT_START_WORD = "Abaco";
@@ -37,7 +38,19 @@ type ActionGame =
     | { type: "set_current_guess"; payload: string }
     | { type: "enter_word_to_guess" }
     | { type: "try_to_guess_word" }
+    | { type: "give_up" }
     | { type: "reset" };
+
+/**
+ * Le azioni di gioco (indovinare, arrendersi) valgono solo a partita in corso.
+ * Restituisce lo stato con l'errore se non lo e, altrimenti `null` e il `case`
+ * chiamante prosegue. La condizione sta scritta qui una volta sola: se domani
+ * cambia, cambia per tutte le azioni che la usano.
+ */
+function blockIfNotPlaying(state: InitialState, errorMessage: string) {
+    if (state.gameStatus === GameStatus.Playing) return null;
+    return { ...state, errorMessage };
+}
 
 export function gameReducer(state: InitialState, action: ActionGame) {
     const { currentGuess, wordToGuess, startWord, endWord } = state;
@@ -85,13 +98,13 @@ export function gameReducer(state: InitialState, action: ActionGame) {
                 errorMessage: "",
                 gameStatus: GameStatus.Playing,
             };
-        case "try_to_guess_word":
-            if(state.gameStatus !== GameStatus.Playing) {
-                return {
-                    ...state,
-                    errorMessage: "Non puoi indovinare la parola se non hai ancora inserito la parola da indovinare",
-                };
-            }
+        case "try_to_guess_word": {
+            const blocked = blockIfNotPlaying(
+                state,
+                "Non puoi indovinare la parola se non hai ancora inserito la parola da indovinare",
+            );
+            if (blocked) return blocked;
+
             if (currentGuessNormalized === "") {
                 return {
                     ...state,
@@ -130,6 +143,20 @@ export function gameReducer(state: InitialState, action: ActionGame) {
                 errorMessage: "",
                 currentGuess: "",
             };
+        }
+        case "give_up": {
+            const blocked = blockIfNotPlaying(
+                state,
+                "Non puoi arrenderti se la partita non è in corso",
+            );
+            if (blocked) return blocked;
+
+            return {
+                ...state,
+                gameStatus: GameStatus.Lost,
+                errorMessage: "",
+            };
+        }
         case "reset":
             return initialState;
         default:
